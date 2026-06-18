@@ -1,0 +1,108 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:          #0A0B0F;
+  --surface:     #12141A;
+  --surface-alt: #1A1D26;
+  --border:      #2A2D3A;
+  --border-hover:#3D4156;
+  --accent:      #6C63FF;
+  --accent-mid:  #8B85FF;
+  --accent-soft: rgba(108,99,255,0.13);
+  --green:       #22D3A0;
+  --green-soft:  rgba(34,211,160,0.13);
+  --amber:       #F59E0B;
+  --amber-soft:  rgba(245,158,11,0.13);
+  --red:         #F43F5E;
+  --red-soft:    rgba(244,63,94,0.13);
+  --text:        #F0F0F8;
+  --text-muted:  #8B8FA8;
+  --text-dim:    #555870;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+}
+
+:root[data-theme="light"] {
+  --bg:          #F6F7FB;
+  --surface:     #FFFFFF;
+  --surface-alt: #EFF1F6;
+  --border:      #E2E4ED;
+  --border-hover:#C7CAD8;
+  --accent:      #6C63FF;
+  --accent-mid:  #5249D9;
+  --accent-soft: rgba(108,99,255,0.10);
+  --green:       #0EA47E;
+  --green-soft:  rgba(14,164,126,0.12);
+  --amber:       #B97509;
+  --amber-soft:  rgba(185,117,9,0.12);
+  --red:         #E11D48;
+  --red-soft:    rgba(225,29,72,0.12);
+  --text:        #1A1C24;
+  --text-muted:  #5B6076;
+  --text-dim:    #9498AD;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+input, textarea, select, button {
+  font-family: inherit;
+  color: inherit;
+}
+
+input, textarea, select {
+  color-scheme: dark;
+  background: var(--surface-alt);
+  /* overridden below for light theme */
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+
+:root[data-theme="light"] input,
+:root[data-theme="light"] textarea,
+:root[data-theme="light"] select {
+  color-scheme: light;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+}
+
+textarea { resize: vertical; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.4); opacity: 0.5; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease forwards;
+}
