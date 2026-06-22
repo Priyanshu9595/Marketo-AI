@@ -29,7 +29,7 @@ export function Input({ label, value, onChange, placeholder, type = 'text', rows
   )
 }
 
-export function Select({ label, value, onChange, options }) {
+export function Select({ label, value, onChange, options, placeholder }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       {label && (
@@ -41,6 +41,7 @@ export function Select({ label, value, onChange, options }) {
         </label>
       )}
       <select value={value} onChange={e => onChange(e.target.value)}>
+        {placeholder && <option value="" disabled>{placeholder}</option>}
         {options.map(o =>
           typeof o === 'string'
             ? <option key={o} value={o}>{o}</option>

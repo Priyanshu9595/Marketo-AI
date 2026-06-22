@@ -1,17 +1,25 @@
 import { useState } from 'react'
 import Card from '../components/Card'
 import Button from '../components/Button'
+import PageHero from '../components/PageHero'
+import Tilt3D from '../components/Tilt3D'
+import CostBadge from '../components/CostBadge'
+import HistorySection from '../components/HistorySection'
 import { Input, Select } from '../components/Input'
 import { COPY_TYPES, TONE_OPTIONS } from '../utils/constants'
-import { streamText } from '../utils/helpers'
+import { streamText, AI_COSTS } from '../utils/helpers'
+import { useGenerationHistory } from '../hooks/useGenerationHistory'
 import { useAuthContext } from '../context/AuthContext'
 
+const ACCENT = '#2458FF'
+
 export default function CopyGenerator() {
-  const [form, setForm] = useState({ brand: '', product: '', audience: '', tone: 'Playful', type: 'Instagram caption', keywords: '' })
+  const [form, setForm] = useState({ brand: '', product: '', audience: '', tone: 'Playful', customTone: '', type: 'Instagram caption', customType: '', words: '', keywords: '' })
   const [output,  setOutput]  = useState('')
   const [loading, setLoading] = useState(false)
   const [copied,  setCopied]  = useState(false)
   const { requireAuth } = useAuthContext()
+  const { history, add, clear } = useGenerationHistory('copy')
 
   const set = (key) => (val) => setForm(f => ({ ...f, [key]: val }))
 
@@ -21,16 +29,28 @@ export default function CopyGenerator() {
     setLoading(true)
     setOutput('')
     try {
+      const token = localStorage.getItem('token')
       const res = await fetch('/api/ai/copy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          ...form,
+          type: form.type === 'Write by yourself' ? (form.customType || 'custom marketing copy') : form.type,
+          tone: form.tone === 'Write by yourself' ? (form.customTone || 'custom brand tone') : form.tone,
+        }),
       })
       const data = await res.json()
-      await streamText(data.content || data.error || 'No content returned.', setOutput)
+      const finalText = data.content || data.error || 'No content returned.'
+      await streamText(finalText, setOutput)
+      if (data.content) {
+        add({ kind: 'text', title: `${form.brand} - ${form.product}`, preview: finalText, cost: AI_COSTS.copy })
+      }
     } catch {
       // Fallback demo output if backend not running
-      const demo = `✨ Introducing ${form.product} by ${form.brand} — crafted for ${form.audience}.\n\nEvery detail tells a story. Every wear, a memory.\n\n💫 Tap the link in bio to explore.\n\n${form.keywords.split(',').map(k => `#${k.trim().replace(/ /g, '')}`).join(' ')} #${form.brand.replace(/ /g, '')} #Fashion #D2C`
+      const demo = `Introducing ${form.product} by ${form.brand} - crafted for ${form.audience}.\n\nEvery detail tells a story. Every wear, a memory.\n\nTap the link in bio to explore.\n\n${form.keywords.split(',').map(k => `#${k.trim().replace(/ /g, '')}`).join(' ')} #${form.brand.replace(/ /g, '')} #Fashion #D2C`
       await streamText(demo, setOutput)
     } finally {
       setLoading(false)
@@ -45,16 +65,32 @@ export default function CopyGenerator() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div>
-        <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>AI copy generator</h2>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Generate optimised marketing content in seconds</p>
+      <PageHero icon="AI" title="AI copy generator" subtitle="Generate bold marketing content with sharper brand voice" accent={ACCENT} />
+
+      <div className="copy-studio-strip">
+        <div className="copy-studio-chip">
+          <strong>Fast idea to final copy</strong>
+          <span>Captions, ads, product blurbs and custom formats.</span>
+        </div>
+        <div className="copy-studio-chip">
+          <strong>Control the voice</strong>
+          <span>Pick a tone or write your own brand style.</span>
+        </div>
+        <div className="copy-studio-chip">
+          <strong>Flexible length</strong>
+          <span>Leave words empty or guide the output size.</span>
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+      <div className="copy-generator-grid">
         {/* Left: inputs */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Card>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="copy-card-heading">
+                <strong>Creative brief</strong>
+                <span>Required inputs</span>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <Input label="Brand name"  value={form.brand}    onChange={set('brand')}    placeholder="e.g. Niharika" />
                 <Input label="Product"     value={form.product}  onChange={set('product')}  placeholder="e.g. Silk kurta" />
@@ -65,8 +101,16 @@ export default function CopyGenerator() {
                 <Select label="Content type" value={form.type} onChange={set('type')} options={COPY_TYPES} />
                 <Select label="Brand tone"   value={form.tone} onChange={set('tone')} options={TONE_OPTIONS} />
               </div>
-              <Button onClick={generate} disabled={loading} style={{ width: '100%', justifyContent: 'center' }}>
-                ✦ {loading ? 'Generating…' : 'Generate content'}
+              {form.type === 'Write by yourself' && (
+                <Input label="Write by yourself" value={form.customType} onChange={set('customType')} placeholder="e.g. WhatsApp promo message, LinkedIn post, landing page hero copy" />
+              )}
+              {form.tone === 'Write by yourself' && (
+                <Input label="Brand tone by yourself" value={form.customTone} onChange={set('customTone')} placeholder="e.g. friendly Hinglish, premium but simple, bold Gen Z" />
+              )}
+              <Input label="Words (optional)" value={form.words} onChange={set('words')} placeholder="e.g. 50, 100, 250" />
+              <CostBadge cost={AI_COSTS.copy} unit="generation" accent={ACCENT} />
+              <Button onClick={generate} disabled={loading} variant="gradient" style={{ width: '100%', justifyContent: 'center' }}>
+                {loading ? 'Generating...' : 'Generate content'}
               </Button>
             </div>
           </Card>
@@ -86,12 +130,23 @@ export default function CopyGenerator() {
         </div>
 
         {/* Right: output */}
-        <Card style={{ minHeight: 320 }}>
+        <Tilt3D glow={ACCENT}>
+        <Card style={{
+          minHeight: 430,
+          height: '100%',
+          background: 'linear-gradient(155deg, #101828 0%, #173BD7 58%, #00A878 130%)',
+          border: '1px solid rgba(255,255,255,0.20)',
+          boxShadow: '0 28px 70px -34px rgba(23,59,215,0.95)',
+          color: '#fff',
+        }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Output</div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: 'rgba(255,255,255,0.62)', textTransform: 'uppercase', letterSpacing: '0.09em' }}>Output</div>
+              <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-0.03em', marginTop: 2 }}>Ready copy</div>
+            </div>
             {output && (
-              <Button size="sm" variant="ghost" onClick={copy}>
-                {copied ? '✓ Copied!' : '⧉ Copy'}
+              <Button size="sm" variant="ghost" onClick={copy} style={{ background: 'rgba(255,255,255,0.95)', color: '#173BD7', border: '1px solid rgba(255,255,255,0.35)' }}>
+                {copied ? 'Copied!' : 'Copy'}
               </Button>
             )}
           </div>
@@ -102,11 +157,14 @@ export default function CopyGenerator() {
               ))}
             </div>
           )}
-          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 13, color: output ? 'var(--text)' : 'var(--text-dim)', lineHeight: 1.7, fontFamily: 'inherit', margin: 0, minHeight: 200 }}>
-            {output || 'Fill in your brand details and click generate →'}
+          <pre className="copy-output-pre" style={{ color: output ? '#fff' : 'rgba(255,255,255,0.62)' }}>
+            {output || 'Fill in your brand details and click generate.'}
           </pre>
         </Card>
+        </Tilt3D>
       </div>
+
+      <HistorySection items={history} onClear={clear} accent={ACCENT} />
     </div>
   )
 }

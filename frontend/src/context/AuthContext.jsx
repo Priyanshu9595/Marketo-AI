@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth } from '../hooks/useAuth'
 
 const AuthContext = createContext(null)
@@ -18,6 +18,15 @@ export function AuthProvider({ children }) {
     openLogin('login')
     return false
   }
+
+  useEffect(() => {
+    const handleExpired = () => {
+      auth.logout()
+      openLogin('login')
+    }
+    window.addEventListener('marketo-auth-expired', handleExpired)
+    return () => window.removeEventListener('marketo-auth-expired', handleExpired)
+  }, [auth.logout])
 
   const value = { ...auth, loginOpen, loginMode, openLogin, closeLogin, requireAuth }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

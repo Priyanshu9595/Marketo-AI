@@ -28,13 +28,14 @@ export default function Button({
 
   const variants = {
     primary: {
-      background: hover ? 'var(--accent-mid)' : 'var(--accent)',
+      background: 'linear-gradient(135deg, #2458FF, #173BD7 52%, #00A878)',
       color: '#fff',
+      boxShadow: disabled ? 'none' : hover ? '0 14px 28px rgba(36,88,255,0.38)' : '0 8px 18px rgba(36,88,255,0.25)',
     },
     ghost: {
-      background: hover ? 'var(--surface-alt)' : 'transparent',
-      color: 'var(--text-muted)',
-      border: `1px solid ${hover ? 'var(--border-hover)' : 'var(--border)'}`,
+      background: hover ? 'var(--accent-soft)' : 'transparent',
+      color: hover ? 'var(--accent)' : 'var(--text-muted)',
+      border: `1px solid ${hover ? 'var(--accent)' : 'var(--border)'}`,
     },
     danger: {
       background: hover ? 'rgba(244,63,94,0.2)' : 'var(--red-soft)',
@@ -45,6 +46,14 @@ export default function Button({
       background: hover ? 'rgba(34,211,160,0.2)' : 'var(--green-soft)',
       color: 'var(--green)',
       border: '1px solid rgba(34,211,160,0.3)',
+    },
+    gradient: {
+      background: 'linear-gradient(135deg, #2458FF 0%, #173BD7 45%, #00A878 100%)',
+      color: '#fff',
+      boxShadow: disabled
+        ? 'none'
+        : hover ? '0 14px 30px rgba(36,88,255,0.42)' : '0 8px 18px rgba(36,88,255,0.28)',
+      transform: hover && !disabled ? 'translateY(-1px)' : 'translateY(0)',
     },
   }
 

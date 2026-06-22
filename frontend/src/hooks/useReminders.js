@@ -1,24 +1,43 @@
 import { useEffect, useRef } from 'react'
 
-const POSTS_KEY    = 'marketo_posts'
 const REMINDED_KEY = 'marketo_reminded'
-const ENABLED_KEY  = 'reminders_enabled'
+const ENABLED_KEY = 'reminders_enabled'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+const CHECK_INTERVAL_MS = 10000
 
-// Background reminder checker. Runs app-wide while the tab is open and fires a
-// browser notification when "now" falls within the hour before a scheduled post.
-export function useReminders() {
+function showReminder(onReminder, detail) {
+  if (onReminder) {
+    onReminder(detail)
+  } else {
+    window.dispatchEvent(new CustomEvent('marketo-reminder-popup', { detail }))
+  }
+}
+
+// Pull scheduled posts from MongoDB and show an in-app popup one hour before.
+// Browser notifications are used too, but only when Chrome allows them.
+export function useReminders(onReminder) {
   const reminded = useRef(new Set(
     JSON.parse(localStorage.getItem(REMINDED_KEY) || '[]')
   ))
 
   useEffect(() => {
-    const check = () => {
+    let cancelled = false
+
+    const check = async () => {
       if (localStorage.getItem(ENABLED_KEY) !== 'true') return
-      if (!('Notification' in window) || Notification.permission !== 'granted') return
+
+      const token = localStorage.getItem('token')
+      if (!token) return
 
       let posts = []
-      try { posts = JSON.parse(localStorage.getItem(POSTS_KEY) || '[]') } catch { return }
-      if (!Array.isArray(posts)) return
+      try {
+        const res = await fetch(`${API}/social`, { headers: { Authorization: `Bearer ${token}` } })
+        if (!res.ok) return
+        posts = await res.json()
+      } catch {
+        return
+      }
+      if (cancelled || !Array.isArray(posts)) return
 
       const now = Date.now()
       posts.forEach(p => {
@@ -26,22 +45,38 @@ export function useReminders() {
         const postTime = new Date(`${p.date}T${p.time || '00:00:00'}`).getTime()
         if (isNaN(postTime)) return
 
-        const remindAt = postTime - 60 * 60 * 1000 // 1 hour before
+        const remindAt = postTime - 60 * 60 * 1000
         const key = String(p.id)
 
-        // Inside the [1h-before, post-time) window and not yet reminded
         if (now >= remindAt && now < postTime && !reminded.current.has(key)) {
-          new Notification('Upcoming post in ~1 hour ⏰', {
-            body: `${p.platform} · ${p.type}\n${p.text}`,
+          const message = `You have left 1 hour to share content on ${p.platform}.`
+          showReminder(onReminder, {
+            title: 'Reminder',
+            message,
+            platform: p.platform,
+            type: p.type,
+            text: p.text,
           })
+
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('Reminder', { body: message })
+          }
+
           reminded.current.add(key)
           localStorage.setItem(REMINDED_KEY, JSON.stringify([...reminded.current]))
         }
       })
     }
 
-    check()                              // run immediately on load
-    const iv = setInterval(check, 30000) // then every 30 seconds
-    return () => clearInterval(iv)
-  }, [])
+    const checkNow = () => check()
+
+    check()
+    window.addEventListener('marketo-check-reminders', checkNow)
+    const iv = setInterval(check, CHECK_INTERVAL_MS)
+    return () => {
+      cancelled = true
+      window.removeEventListener('marketo-check-reminders', checkNow)
+      clearInterval(iv)
+    }
+  }, [onReminder])
 }

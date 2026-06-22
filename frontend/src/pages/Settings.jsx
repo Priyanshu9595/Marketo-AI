@@ -2,6 +2,8 @@ import { useState } from 'react'
 import Card from '../components/Card'
 import Button from '../components/Button'
 import { Input } from '../components/Input'
+import { useApi } from '../hooks/useApi'
+import { useAuthContext } from '../context/AuthContext'
 
 const FONT_SIZES = [
   { label: 'Small',       scale: '0.9'  },
@@ -18,6 +20,33 @@ const THEMES = [
 export default function Settings() {
   const [fontScale, setFontScale] = useState(localStorage.getItem('font_scale') || '1')
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark')
+  const [client, setClient] = useState({ name: '', email: '', password: '' })
+  const [clientMsg, setClientMsg] = useState('')
+  const [clientErr, setClientErr] = useState('')
+  const { post, loading } = useApi()
+  const { requireAuth } = useAuthContext()
+
+  const setC = (k) => (v) => setClient(prev => ({ ...prev, [k]: v }))
+
+  const createClient = async () => {
+    if (!requireAuth()) return
+    setClientMsg(''); setClientErr('')
+    if (!client.email || !client.password) {
+      setClientErr('Email and password are required.')
+      return
+    }
+    if (client.password.length < 6) {
+      setClientErr('Password must be at least 6 characters.')
+      return
+    }
+    try {
+      const data = await post('/auth/client', client)
+      setClientMsg(`✓ Client account created for ${data.user.email}`)
+      setClient({ name: '', email: '', password: '' })
+    } catch (err) {
+      setClientErr(err.message || 'Could not create client account.')
+    }
+  }
 
   const applyFontScale = (scale) => {
     setFontScale(scale)
@@ -35,7 +64,7 @@ export default function Settings() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <div>
         <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>Settings</h2>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Configure your API keys and preferences</p>
+        <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '4px 0 0' }}>Manage appearance and client accounts</p>
       </div>
 
       {/* Appearance */}
@@ -71,12 +100,21 @@ export default function Settings() {
         </div>
       </Card>
 
+      {/* Create client account */}
       <Card>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 16 }}>Account</div>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Create client account</div>
+        <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 16 }}>
+          Set up login credentials for a new client. They can then log in with this email and password.
+        </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <Input label="Brand name" value="" onChange={() => {}} placeholder="Your company name" />
-          <Input label="Email"      value="" onChange={() => {}} placeholder="you@company.com" type="email" />
-          <Button style={{ alignSelf: 'flex-start' }}>Update profile</Button>
+          <Input label="Client name (optional)" value={client.name} onChange={setC('name')} placeholder="Client or brand name" />
+          <Input label="Client email" type="email" value={client.email} onChange={setC('email')} placeholder="client@example.com" />
+          <Input label="Password" type="password" value={client.password} onChange={setC('password')} placeholder="At least 6 characters" />
+          {clientErr && <div style={{ fontSize: 13, color: 'var(--red)' }}>{clientErr}</div>}
+          {clientMsg && <div style={{ fontSize: 13, color: 'var(--green)' }}>{clientMsg}</div>}
+          <Button onClick={createClient} disabled={loading} style={{ alignSelf: 'flex-start' }}>
+            {loading ? 'Creating…' : 'Create client account'}
+          </Button>
         </div>
       </Card>
     </div>

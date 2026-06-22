@@ -3,9 +3,11 @@ import bcrypt from 'bcryptjs'
 
 const userSchema = new mongoose.Schema(
   {
-    name:     { type: String, trim: true },
-    email:    { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password: { type: String, required: true, minlength: 6 },
+    name:      { type: String, trim: true },
+    email:     { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password:  { type: String, required: true, minlength: 6 },
+    role:      { type: String, default: 'user' }, // 'user' (company) | 'client'
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 )

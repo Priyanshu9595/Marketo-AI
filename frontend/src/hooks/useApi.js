@@ -22,6 +22,13 @@ export function useApi() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
+        if (res.status === 401) {
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+          window.dispatchEvent(new CustomEvent('marketo-auth-expired', {
+            detail: { message: err.error || err.message || 'Your session expired. Please log in again.' },
+          }))
+        }
         throw new Error(err.error || err.message || res.statusText || 'Request failed')
       }
       return await res.json()

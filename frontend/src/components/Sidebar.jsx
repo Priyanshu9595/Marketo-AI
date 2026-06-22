@@ -11,7 +11,7 @@ const icons = {
   settings:  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
 }
 
-export default function Sidebar({ active, onNavigate }) {
+export default function Sidebar({ active, onNavigate, open = false, onClose }) {
   const [hovered, setHovered] = useState(null)
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark')
 
@@ -24,56 +24,52 @@ export default function Sidebar({ active, onNavigate }) {
   const toggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'))
 
   return (
-    <aside style={{
-      width: 220,
+    <aside className={`app-sidebar ${open ? 'is-open' : ''}`} style={{
+      width: 248,
       flexShrink: 0,
-      background: 'var(--surface)',
-      borderRight: '1px solid var(--border)',
       display: 'flex',
       flexDirection: 'column',
-      padding: '20px 12px',
+      padding: '18px 14px 6px',
       position: 'sticky',
       top: 0,
-      height: '100vh',
       overflowY: 'auto',
     }}>
       {/* Logo + theme toggle */}
-      <div style={{ padding: '8px 12px 24px', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{
-          width: 32, height: 32, borderRadius: 8,
-          background: 'var(--accent)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.5">
-            <path d="M12 2L14.4 9.6H22L15.8 14.4L18.2 22L12 17.2L5.8 22L8.2 14.4L2 9.6H9.6L12 2Z" strokeLinejoin="round"/>
-          </svg>
-        </div>
+      <div className="sidebar-logo" style={{ padding: '10px 14px 26px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <img
+          src="/favicon.svg"
+          alt="Marketo AI"
+          className="sidebar-brand-icon"
+        />
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>Marketo AI</div>
-          <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>D2C growth suite</div>
+          <div className="sidebar-brand-name">Marketo AI</div>
+          <div className="sidebar-brand-sub">D2C growth suite</div>
         </div>
         <button
+          className="sidebar-theme-toggle"
           onClick={toggleTheme}
           title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-          style={{
-            width: 30, height: 30, borderRadius: 8, flexShrink: 0,
-            border: '1px solid var(--border)', background: 'var(--surface-alt)',
-            color: 'var(--text-muted)', cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 14,
-          }}
         >
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
       </div>
 
+        <button
+          className="sidebar-close-button"
+          type="button"
+          onClick={onClose}
+          aria-label="Close sidebar"
+          title="Close menu"
+        >
+          x
+        </button>
       {/* Nav links */}
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1 }}>
+      <nav className="sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
         {NAV_ITEMS.filter(i => i.id !== 'settings').map(item => renderNavButton(item))}
       </nav>
 
       {/* Settings pinned to the bottom */}
-      <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+      <div className="sidebar-settings" style={{ marginTop: 'auto', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
         {NAV_ITEMS.filter(i => i.id === 'settings').map(item => renderNavButton(item))}
       </div>
     </aside>
@@ -90,17 +86,37 @@ export default function Sidebar({ active, onNavigate }) {
         onMouseLeave={() => setHovered(null)}
         style={{
           display: 'flex', alignItems: 'center', gap: 10,
-          padding: '10px 12px', borderRadius: 10, border: 'none',
-          background: isActive ? 'var(--accent-soft)' : isHovered ? 'var(--surface-alt)' : 'transparent',
-          color: isActive ? 'var(--accent-mid)' : 'var(--text-muted)',
+          padding: '11px 12px', borderRadius: 14, border: '1px solid',
+          background: isActive
+            ? 'linear-gradient(135deg, rgba(37,99,235,0.16), rgba(168,85,247,0.22), rgba(6,182,212,0.14))'
+            : isHovered
+              ? 'rgba(255,255,255,0.62)'
+              : 'transparent',
+          color: isActive ? '#1d4ed8' : 'var(--text-muted)',
           cursor: 'pointer',
-          fontWeight: isActive ? 600 : 500,
+          fontWeight: isActive ? 800 : 600,
           fontSize: 14, textAlign: 'left', width: '100%',
-          transition: 'all 0.15s',
-          borderLeft: `3px solid ${isActive ? 'var(--accent)' : 'transparent'}`,
+          transition: 'all 0.2s ease',
+          borderColor: isActive ? 'rgba(37,99,235,0.26)' : 'transparent',
+          boxShadow: isActive ? '0 12px 28px rgba(37,99,235,0.16)' : isHovered ? '0 8px 20px rgba(37,99,235,0.08)' : 'none',
+          transform: isHovered || isActive ? 'translateX(3px)' : 'translateX(0)',
         }}
       >
-        <span style={{ color: 'currentColor', flexShrink: 0 }}>{icons[item.icon]}</span>
+        <span
+          style={{
+            color: isActive ? '#fff' : 'currentColor',
+            flexShrink: 0,
+            width: 28,
+            height: 28,
+            borderRadius: 10,
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: isActive ? 'linear-gradient(135deg, #2563eb, #7c3aed)' : 'rgba(37,99,235,0.08)',
+          }}
+        >
+          {icons[item.icon]}
+        </span>
         {item.label}
       </button>
     )

@@ -19,20 +19,20 @@ export const C = {
 }
 
 export const NAV_ITEMS = [
-  { id: 'dashboard',  label: 'Campaigns',      icon: 'dashboard' },
-  { id: 'calendar',   label: 'Social calendar', icon: 'calendar'  },
-  { id: 'copy',       label: 'Copy generator',  icon: 'pen'       },
-  { id: 'image',      label: 'AI images',       icon: 'image'     },
-  { id: 'video',      label: 'Video ads',       icon: 'video'     },
-  { id: 'settings',   label: 'Settings',        icon: 'settings'  },
+  { id: 'dashboard', label: 'Campaigns', icon: 'dashboard' },
+  { id: 'calendar', label: 'Social calendar', icon: 'calendar' },
+  { id: 'copy', label: 'Copy generator', icon: 'pen' },
+  { id: 'image', label: 'AI images', icon: 'image' },
+  { id: 'video', label: 'Video ads', icon: 'video' },
+  { id: 'settings', label: 'Settings', icon: 'settings' },
 ]
 
 export const PLATFORM_COLORS = {
   Instagram: '#6C63FF',
-  Facebook:  '#1877F2',
-  LinkedIn:  '#0A66C2',
-  X:         '#F0F0F8',
-  YouTube:   '#FF0000',
+  Facebook: '#1877F2',
+  LinkedIn: '#0A66C2',
+  YouTube: '#FF0000',
+  X: '#F0F0F8',
   Pinterest: '#E60023',
 }
 
@@ -43,28 +43,29 @@ export const COPY_TYPES = [
   'Email subject lines',
   'Blog intro',
   'Hashtags',
+  'Write by yourself',
 ]
 
 export const TONE_OPTIONS = [
-  'Playful', 'Luxury', 'Minimal', 'Bold', 'Warm', 'Professional',
+  'Playful', 'Luxury', 'Minimal', 'Bold', 'Warm', 'Professional', 'Write by yourself',
 ]
 
 export const PLATFORMS = [
-  'Instagram', 'Facebook', 'LinkedIn', 'X', 'Pinterest', 'YouTube',
+  'Instagram', 'Facebook', 'LinkedIn', 'YouTube',
 ]
 
 export const AD_FORMATS = [
-  { name: '15s Reel',   emoji: '📱', platforms: 'Instagram, TikTok', ratio: '9:16' },
-  { name: '30s Ad',     emoji: '📺', platforms: 'Meta, YouTube',     ratio: '16:9' },
-  { name: 'Story',      emoji: '🔲', platforms: 'Instagram, FB',     ratio: '9:16' },
-  { name: 'Slideshow',  emoji: '🎞️', platforms: 'All platforms',     ratio: '1:1'  },
+  { name: '15s Reel', emoji: '📱', platforms: 'Instagram, TikTok', ratio: '9:16' },
+  { name: '30s Ad', emoji: '📺', platforms: 'Meta platforms', ratio: '16:9' },
+  { name: 'Story', emoji: '🔲', platforms: 'Instagram, FB', ratio: '9:16' },
+  { name: 'Slideshow', emoji: '🎞️', platforms: 'All platforms', ratio: '1:1' },
 ]
 
 export const IMAGE_SCENES = {
-  'Beach photoshoot': { emoji: '🏖️', desc: 'Golden hour, ocean blur, warm sand', seed: 'beach'  },
-  'Gym setup':        { emoji: '💪', desc: 'Dramatic lighting, athletic aesthetic', seed: 'gym'   },
-  'Luxury studio':    { emoji: '✨', desc: 'Clean white studio, pro lighting',     seed: 'studio' },
-  'Festival vibes':   { emoji: '🎉', desc: 'Colorful bokeh, festive warm lights',  seed: 'party'  },
-  'Forest trail':     { emoji: '🌲', desc: 'Dappled sunlight, natural greenery',   seed: 'forest' },
-  'Urban street':     { emoji: '🏙️', desc: 'City backdrop, contemporary mood',    seed: 'city'   },
+  'Beach photoshoot': { emoji: '🏖️', desc: 'Golden hour, ocean blur, warm sand', seed: 'beach' },
+  'Gym setup': { emoji: '💪', desc: 'Dramatic lighting, athletic aesthetic', seed: 'gym' },
+  'Luxury studio': { emoji: '✨', desc: 'Clean white studio, pro lighting', seed: 'studio' },
+  'Festival vibes': { emoji: '🎉', desc: 'Colorful bokeh, festive warm lights', seed: 'party' },
+  'Forest trail': { emoji: '🌲', desc: 'Dappled sunlight, natural greenery', seed: 'forest' },
+  'Urban street': { emoji: '🏙️', desc: 'City backdrop, contemporary mood', seed: 'city' },
 }

@@ -10,6 +10,6 @@ export const aiLimiter = rateLimit({
 
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 200,
+  max: 1000,
   message: { error: 'Too many requests. Please slow down.' },
 })

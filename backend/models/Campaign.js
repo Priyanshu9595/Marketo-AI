@@ -8,9 +8,12 @@ const campaignSchema = new mongoose.Schema(
     spend:    { type: Number, default: 0 },
     revenue:  { type: Number, default: 0 },
     clicks:   { type: Number, default: 0 },
+    auto:     { type: Boolean, default: false }, // auto-managed AI usage & social revenue campaign
     status:   { type: String, default: 'active' },
     start:    { type: String, default: '' },
+    startTime:{ type: String, default: '' },
     end:      { type: String, default: '' },
+    endTime:  { type: String, default: '' },
   },
   { timestamps: true }
 )

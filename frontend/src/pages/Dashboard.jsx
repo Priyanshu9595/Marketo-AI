@@ -169,7 +169,7 @@ export default function Dashboard() {
       )}
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+      <div className="dashboard-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         <StatCard label="Total spend"       value={formatINR(totalSpend)} sub="This month"          color="var(--accent)" icon="💸" />
         <StatCard label="Total revenue"     value={formatINR(totalRev)}   sub="+28% vs last month"  color="var(--green)"  icon="📈" />
         <StatCard label="Avg ROAS"          value={`${avgROAS}x`}         sub="Above 3x target"     color="var(--amber)"  icon="⚡" />
@@ -177,7 +177,7 @@ export default function Dashboard() {
       </div>
 
       {/* Charts */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
+      <div className="dashboard-charts-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
         <Card>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 }}>Revenue trend (12 months)</div>
           {campaigns.length > 0 ? (
@@ -208,7 +208,8 @@ export default function Dashboard() {
 
       {/* Table */}
       <Card style={{ padding: 0, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: 'auto', width: '100%' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid var(--border)' }}>
               {['Campaign', 'Platform', 'Spend', 'Revenue', 'ROAS', 'CAC', 'Status', 'Actions'].map(h => (
@@ -283,6 +284,7 @@ export default function Dashboard() {
             ))}
           </tbody>
         </table>
+        </div>
       </Card>
     </div>
   )
