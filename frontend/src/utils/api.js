@@ -1,4 +1,4 @@
-export const API_BASE = (import.meta.env.VITE_API_URL || 'https://marketo-ai.onrender.com/api').replace(/\/$/, '')
+export const API_BASE = (import.meta.env.VITE_API_URL || 'https://marketo-ai-backend.onrender.com/api').replace(/\/$/, '')
 
 export async function apiFetch(endpoint, options = {}) {
   const token = localStorage.getItem('token')
