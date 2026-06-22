@@ -59,9 +59,12 @@ export default function Dashboard() {
   }, [isLoggedIn])
 
   const livePosts = posts.filter(p => !p.deleted)
-  const postedPosts = livePosts.filter(p => p.posted)
+  const historyPosts = posts.filter(p => p.deleted && p.posted) // deleted but already posted
+  const allBilledPosts = [...livePosts, ...historyPosts]        // all posts that count for spend/revenue
 
-  const platformRows = Object.values(livePosts.reduce((acc, post) => {
+  const postedPosts = allBilledPosts.filter(p => p.posted)
+
+  const platformRows = Object.values(allBilledPosts.reduce((acc, post) => {
     const platform = post.platform || 'Other'
     const row = acc[platform] || {
       id: platform,
@@ -87,7 +90,7 @@ export default function Dashboard() {
     return acc
   }, {})).sort((a, b) => b.spend - a.spend)
 
-  const totalSpend = livePosts.reduce((sum, post) => sum + postSpend(post), 0)
+  const totalSpend = allBilledPosts.reduce((sum, post) => sum + postSpend(post), 0)
   const totalRev = postedPosts.reduce((sum, post) => sum + engagementRevenue(post), 0)
   const avgROAS = totalSpend ? (totalRev / totalSpend).toFixed(1) : '0.0'
 
@@ -119,7 +122,7 @@ export default function Dashboard() {
       {error && <div style={{ fontSize: 13, color: 'var(--red)' }}>{error}</div>}
 
       <div className="dashboard-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-        <StatCard label="Total spend" value={formatINR(totalSpend)} sub={`${livePosts.length} uploaded item(s)`} color="var(--accent)" icon="$" />
+        <StatCard label="Total spend" value={formatINR(totalSpend)} sub={`${allBilledPosts.length} item(s) incl. history`} color="var(--accent)" icon="$" />
         <StatCard label="Total revenue" value={formatINR(totalRev)} sub={`${postedPosts.length} posted item(s)`} color="var(--green)" icon="^" />
         <StatCard label="Avg ROAS" value={`${avgROAS}x`} sub="From posted engagement" color="var(--amber)" icon="x" />
         <StatCard label="Active platforms" value={platformRows.length} sub="Auto fetched" color="var(--accent)" icon="@" />
@@ -188,6 +191,76 @@ export default function Dashboard() {
           </table>
         </div>
       </Card>
+
+      {/* Per-post breakdown: active + history, same style as Social Calendar */}
+      {postedPosts.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+            All posted items ({postedPosts.length}) — active &amp; history
+          </div>
+          {[...postedPosts]
+            .sort((a, b) => new Date(b.postedAt || b.date) - new Date(a.postedAt || a.date))
+            .map(post => {
+              const rev = engagementRevenue(post)
+              const spend = postSpend(post)
+              const isHistory = post.deleted
+              const platformColor = PLATFORM_PALETTE[post.platform] || 'var(--green)'
+              const postedDate = post.postedAt
+                ? new Date(post.postedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+                : post.date
+              return (
+                <Card key={post._id || post.id} style={{ border: isHistory ? '1px solid var(--border)' : undefined, opacity: isHistory ? 0.85 : 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                    {/* Platform avatar */}
+                    <div style={{
+                      width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                      background: platformColor + '22', color: platformColor,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontWeight: 800, fontSize: 13,
+                    }}>
+                      {(post.platform || 'X').slice(0, 2).toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {/* Top row: platform + badges */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                        <span style={{ fontWeight: 700, fontSize: 14 }}>{post.platform}</span>
+                        {post.type && <Badge color="var(--text-dim)" style={{ fontSize: 10 }}>{post.type}</Badge>}
+                        {post.postMethod && <Badge color="var(--text-dim)" style={{ fontSize: 10 }}>{post.postMethod}</Badge>}
+                        <Badge color="var(--green)">posted</Badge>
+                        {post.autoPosted && <Badge color="var(--accent)">auto</Badge>}
+                        {isHistory && <Badge color="var(--text-dim)">history</Badge>}
+                      </div>
+                      {/* Date */}
+                      <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 6 }}>🕐 {postedDate}</div>
+                      {/* Text */}
+                      <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 4 }}>{post.text}</div>
+                      {/* External post ID */}
+                      {post.externalPostId && !post.externalPostId.startsWith('simulated_') && (
+                        <div style={{ fontSize: 12, color: platformColor, marginBottom: 4 }}>
+                          {post.platform} post ID: {post.externalPostId}
+                        </div>
+                      )}
+                      {/* Media URL */}
+                      {post.mediaUrl && (
+                        <div style={{ fontSize: 12, color: 'var(--text-dim)', marginBottom: 6 }}>
+                          Media: <a href={post.mediaUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--accent)' }}>{post.mediaUrl}</a>
+                        </div>
+                      )}
+                      {/* Engagement + revenue */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 6 }}>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                          👁 {post.views || 0} · ❤️ {post.likes || 0} · 🔁 {post.shares || 0} · 💬 {post.comments || 0}
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--green)' }}>Revenue: Rs {rev}</span>
+                        <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Spend: {formatINR(spend)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              )
+            })}
+        </div>
+      )}
     </div>
   )
 }
