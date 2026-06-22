@@ -4,6 +4,7 @@ import { Input } from '../components/Input'
 import { AI_COSTS } from '../utils/helpers'
 import { useGenerationHistory } from '../hooks/useGenerationHistory'
 import { useAuthContext } from '../context/AuthContext'
+import { apiFetch } from '../utils/api'
 
 const ACCENT = '#6C63FF'
 const PURPLE_GRADIENT = 'linear-gradient(135deg, #7C3AED, #4F46E5)'
@@ -53,15 +54,10 @@ export default function ImageGen() {
   const totalCost = AI_COSTS.image * count
 
   const generateOne = async () => {
-    const token = localStorage.getItem('token')
-    const res = await fetch('/api/ai/image', {
+    const data = await apiFetch('/ai/image', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify({ prompt, product, size: aspect, style: style === 'Photorealistic' ? '' : style, images: [] }),
+      body: { prompt, product, size: aspect, style: style === 'Photorealistic' ? '' : style, images: [] },
     })
-    const data = await res.json().catch(() => null)
-    if (!data) throw new Error('Backend not reachable — is it running? (cd backend && npm run dev)')
-    if (!res.ok) throw new Error(data.error || 'Image generation failed')
     return data.url
   }
 

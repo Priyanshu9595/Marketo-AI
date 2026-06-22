@@ -11,6 +11,7 @@ import Home from './pages/Home'
 import Button from './components/Button'
 import { useAuthContext } from './context/AuthContext'
 import { useReminders } from './hooks/useReminders'
+import { NAV_ITEMS } from './utils/constants'
 
 const PAGES = {
   dashboard: Dashboard,
@@ -21,26 +22,19 @@ const PAGES = {
   settings:  Settings,
 }
 
-const NOTIFICATIONS_KEY = 'marketo_notifications'
 const AUTO_REFRESH_MS = 10000
 
 export default function App() {
   const [active, setActive] = useState(() => {
-    const saved = localStorage.getItem('active_page')
-    return saved && PAGES[saved] ? saved : 'dashboard'
+    return localStorage.getItem('marketo_active_page') || 'dashboard'
   })
   const [reminderPopup, setReminderPopup] = useState(null)
   const [notificationOpen, setNotificationOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [notifications, setNotifications] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || '[]')
-    } catch {
-      return []
-    }
-  })
+  const [notifications, setNotifications] = useState([])
   const { isLoggedIn, ready, user, logout, openLogin, loginOpen } = useAuthContext()
   const Page = PAGES[active] || Dashboard
+  const activePageLabel = NAV_ITEMS.find(item => item.id === active)?.label || 'Campaigns'
 
   const addNotification = useCallback((notification) => {
     const item = {
@@ -52,14 +46,12 @@ export default function App() {
     setReminderPopup(item)
     setNotifications(prev => {
       const next = [item, ...prev].slice(0, 50)
-      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(next))
       return next
     })
   }, [])
 
   const clearNotifications = () => {
     setNotifications([])
-    localStorage.removeItem(NOTIFICATIONS_KEY)
   }
 
   useReminders(addNotification) // app-wide post reminders (fires ~1h before scheduled posts)
@@ -103,15 +95,10 @@ export default function App() {
     return () => clearInterval(timer)
   }, [isLoggedIn])
 
-  // Apply the saved font-size scale on load
-  useEffect(() => {
-    document.documentElement.style.zoom = localStorage.getItem('font_scale') || '1'
-  }, [])
-
   // Persist the active page and navigate
   const navigate = (id) => {
     setActive(id)
-    localStorage.setItem('active_page', id)
+    localStorage.setItem('marketo_active_page', id)
     setSidebarOpen(false)
   }
 
@@ -144,14 +131,18 @@ export default function App() {
           <button
             type="button"
             className="sidebar-toggle-button"
-            onClick={() => setSidebarOpen(true)}
-            aria-label="Open sidebar"
-            title="Open menu"
+            onClick={() => setSidebarOpen(open => !open)}
+            aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+            title={sidebarOpen ? 'Close menu' : 'Open menu'}
           >
             <span />
             <span />
             <span />
           </button>
+          <div className="active-page-label">
+            <span>Active</span>
+            <strong>{activePageLabel}</strong>
+          </div>
           {isLoggedIn ? (
             <div className="topbar-actions" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 10 }}>
               <div data-notification-center="true" style={{ position: 'relative' }}>

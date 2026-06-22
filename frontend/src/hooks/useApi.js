@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react'
-
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+import { apiFetch } from '../utils/api'
 
 export function useApi() {
   const [loading, setLoading] = useState(false)
@@ -10,28 +9,7 @@ export function useApi() {
     setLoading(true)
     setError(null)
     try {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${BASE}${endpoint}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...options.headers,
-        },
-        ...options,
-        body: options.body ? JSON.stringify(options.body) : undefined,
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        if (res.status === 401) {
-          localStorage.removeItem('token')
-          localStorage.removeItem('user')
-          window.dispatchEvent(new CustomEvent('marketo-auth-expired', {
-            detail: { message: err.error || err.message || 'Your session expired. Please log in again.' },
-          }))
-        }
-        throw new Error(err.error || err.message || res.statusText || 'Request failed')
-      }
-      return await res.json()
+      return await apiFetch(endpoint, options)
     } catch (err) {
       setError(err.message)
       throw err

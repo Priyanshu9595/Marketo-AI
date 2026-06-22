@@ -99,11 +99,12 @@ const MEDIA_PLATFORMS = [...REAL_POSTING_PLATFORMS, ...EXTERNAL_WORKFLOW_PLATFOR
 const TYPE_ICONS = { Text: '📝', Image: '🖼️', Video: '🎬' }
 const STATUS_COLORS = { scheduled: 'var(--accent)', posting: 'var(--amber)', retrying: 'var(--amber)', posted: 'var(--green)', missed: 'var(--red)' }
 const DAYS_HEADER = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const SCHEDULE_TIME_ZONE_OFFSET = '+05:30'
 const pad = (n) => String(n).padStart(2, '0')
 const dateKey = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`
 
 // Combine a post's date + time into a Date object
-const postDateTime = (p) => new Date(`${p.date}T${p.time || '00:00:00'}`)
+const postDateTime = (p) => new Date(`${p.date}T${p.time || '00:00:00'}${SCHEDULE_TIME_ZONE_OFFSET}`)
 
 // A post isn't "missed" the instant its time passes — the auto-poster needs a
 // moment to pick it up. Give a 1-minute grace window (show "posting"), and only
@@ -117,6 +118,7 @@ const postStatus = (p) => {
   if (p.nextPostAttemptAt && new Date(p.nextPostAttemptAt) > new Date()) return 'retrying'
   if (EXTERNAL_WORKFLOW_PLATFORMS.includes(p.platform) && !p.postError) return 'scheduled'
   const overdueMs = Date.now() - postDateTime(p).getTime()
+  if (REAL_POSTING_PLATFORMS.includes(p.platform) && overdueMs >= 0 && !p.postError) return 'posting'
   if (overdueMs > MISSED_GRACE_MS) return 'missed'
   if (overdueMs >= 0) return 'posting' // due, within the grace window
   return 'scheduled'
@@ -155,6 +157,7 @@ export default function Calendar() {
   const [mediaUpload, setMediaUpload] = useState(null)
   const [error, setError]       = useState('')
   const [reminderMsg, setReminderMsg] = useState('')
+  const [remindersOn, setRemindersOn] = useState(false)
   const [viewDate, setViewDate]       = useState(() => new Date()) // month being viewed
   const [selectedDate, setSelectedDate] = useState(null)           // 'YYYY-MM-DD'
   const { requireAuth, isLoggedIn } = useAuthContext()
@@ -177,10 +180,8 @@ export default function Calendar() {
         .catch(() => {})
     }
     window.addEventListener('marketo-auto-refresh', refreshPosts)
-    const iv = setInterval(refreshPosts, 10000)
     return () => {
       window.removeEventListener('marketo-auto-refresh', refreshPosts)
-      clearInterval(iv)
     }
   }, [isLoggedIn])
 
@@ -371,8 +372,6 @@ export default function Calendar() {
     }
   }
 
-  const remindersOn = localStorage.getItem('reminders_enabled') === 'true'
-
   const showReminderTest = () => {
     window.dispatchEvent(new CustomEvent('marketo-reminder-popup', {
       detail: {
@@ -390,19 +389,19 @@ export default function Calendar() {
   // checker (useReminders) then notifies ~1 hour before each scheduled post.
   const enableReminders = () => {
     if (!('Notification' in window)) {
-      localStorage.setItem('reminders_enabled', 'true')
+      setRemindersOn(true)
       setReminderMsg('In-app reminder popups are ON. You will see popup reminders while this app is open.')
       showReminderTest()
       return
     }
     Notification.requestPermission().then(perm => {
       if (perm !== 'granted') {
-        localStorage.setItem('reminders_enabled', 'true')
+        setRemindersOn(true)
         setReminderMsg('Chrome notifications are blocked, so in-app reminder popups are ON while this app is open.')
         showReminderTest()
         return
       }
-      localStorage.setItem('reminders_enabled', 'true')
+      setRemindersOn(true)
       setReminderMsg("🔔 Reminders are ON — you'll be notified about 1 hour before each scheduled post, while this app is open in your browser.")
       // Send a quick confirmation notification so you know it works
       new Notification('Reminders enabled ✅', { body: "We'll remind you ~1 hour before each scheduled post." })
@@ -431,7 +430,7 @@ export default function Calendar() {
   const contentTypeOptions = form.platform === 'YouTube' ? ['Video'] : CONTENT_TYPES
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div className="calendar-page" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>

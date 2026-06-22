@@ -1,8 +1,8 @@
 // Per-generation paid-API cost in INR. Each successful AI generation adds this
 // to the logged-in user's auto-tracked "AI usage & social" campaign spend.
 //   text  → Gemini 2.5 Flash  $0.0028 ≈ ₹0.26
-//   image →                   $0.039  ≈ ₹3.68
-//   video →                   $0.80   ≈ ₹75.46
+//   image → gemini-3.1-flash-image $0.039  ≈ ₹3.68
+//   video → veo-3.0-generate-001 $0.80   ≈ ₹75.46
 export const AI_COSTS = {
   copy:  0.26,
   image: 3.68,

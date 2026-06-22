@@ -64,7 +64,8 @@
 }
 
 html, body, #root {
-  height: 100%;
+  min-height: 100%;
+  width: 100%;
   color: var(--text);
   font-family: 'Inter', system-ui, sans-serif;
   font-size: 14px;
@@ -72,20 +73,16 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Clean UI background and center layout */
+/* Full-bleed app background */
 body {
-  background: var(--surface-alt);
-  display: flex;
-  justify-content: center;
+  background: var(--bg);
+  min-width: 100%;
+  overflow-x: hidden;
 }
 
 #root {
   width: 100%;
-  max-width: 1440px;
   background: var(--bg);
-  border-left: 1px solid var(--border);
-  border-right: 1px solid var(--border);
-  box-shadow: 0 0 20px rgba(0,0,0,0.03);
   min-height: 100vh;
   position: relative;
   display: flex;
@@ -537,6 +534,29 @@ button:focus-visible {
   background: linear-gradient(90deg, #2563eb, #7c3aed);
 }
 
+.active-page-label {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 140px;
+  margin-right: auto;
+  line-height: 1.2;
+}
+
+.active-page-label span {
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.active-page-label strong {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 900;
+}
+
 .sidebar-close-button {
   position: absolute;
   top: 18px;
@@ -552,10 +572,46 @@ button:focus-visible {
 
 .app-main {
   padding: 0 !important;
+  min-height: calc(100vh - 71px);
+  background:
+    radial-gradient(circle at 12% 10%, rgba(37, 99, 235, 0.09), transparent 28%),
+    radial-gradient(circle at 88% 18%, rgba(20, 184, 166, 0.10), transparent 30%),
+    linear-gradient(135deg, #f8fbff 0%, #f4f8ff 54%, #fbfcff 100%);
 }
 
 .app-topbar {
   background: rgba(255, 255, 255, 0.70) !important;
+  width: 100%;
+}
+
+.dashboard-page {
+  width: 100%;
+  min-height: calc(100vh - 71px);
+  padding: clamp(18px, 2.5vw, 34px);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(37, 99, 235, 0.10), transparent 28%),
+    radial-gradient(circle at 88% 8%, rgba(20, 184, 166, 0.12), transparent 30%),
+    linear-gradient(135deg, #f8fbff 0%, #f3f8ff 54%, #fbfdff 100%);
+}
+
+.dashboard-page > div:first-child {
+  padding-top: 4px;
+}
+
+.calendar-page,
+.copy-page {
+  width: 100%;
+  min-height: calc(100vh - 71px);
+  padding: clamp(18px, 2.5vw, 34px);
+  background:
+    radial-gradient(circle at 10% 0%, rgba(37, 99, 235, 0.10), transparent 28%),
+    radial-gradient(circle at 88% 8%, rgba(20, 184, 166, 0.12), transparent 30%),
+    linear-gradient(135deg, #f8fbff 0%, #f3f8ff 54%, #fbfdff 100%);
+}
+
+.calendar-page > div:first-child,
+.copy-page > div:first-child {
+  margin-top: 4px;
 }
 
 /* Reference-style AI image/video pages */
@@ -1464,5 +1520,103 @@ button:focus-visible {
   .dashboard-stats-grid,
   .dashboard-charts-grid {
     grid-template-columns: 1fr !important;
+  }
+}
+
+/* Final full-bleed/drawer overrides */
+body {
+  display: block !important;
+  justify-content: initial !important;
+}
+
+#root,
+.app-shell,
+.app-content {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+
+.app-content {
+  margin-left: 0 !important;
+}
+
+@media (min-width: 761px) {
+  .app-shell.sidebar-open .app-sidebar {
+    transform: translateX(0) !important;
+    box-shadow: 28px 0 80px rgba(37, 99, 235, 0.12) !important;
+  }
+
+  .app-shell.sidebar-open .app-content {
+    margin-left: 248px !important;
+    width: calc(100% - 248px) !important;
+  }
+
+  .app-shell.sidebar-closed .app-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .sidebar-backdrop {
+    display: none !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-main {
+    padding: 0 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .app-sidebar {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: min(288px, calc(100vw - 28px)) !important;
+    height: 100vh !important;
+    max-height: none !important;
+    padding: 18px 14px 6px !important;
+    border-right: 1px solid var(--border) !important;
+    border-bottom: 0 !important;
+    overflow-y: auto !important;
+    transform: translateX(-112%);
+  }
+
+  .app-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-nav {
+    flex-direction: column !important;
+    overflow-x: visible !important;
+  }
+
+  .sidebar-nav button,
+  .sidebar-settings button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .app-topbar {
+    top: 0 !important;
+  }
+
+  .app-main {
+    padding: 0 !important;
+  }
+}
+
+.app-main {
+  padding-top: 18px !important;
+}
+
+@media (max-width: 760px) {
+  .app-main {
+    padding-top: 14px !important;
   }
 }

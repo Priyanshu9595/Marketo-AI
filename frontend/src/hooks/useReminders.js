@@ -1,9 +1,8 @@
 import { useEffect, useRef } from 'react'
+import { API_BASE } from '../utils/api'
 
-const REMINDED_KEY = 'marketo_reminded'
-const ENABLED_KEY = 'reminders_enabled'
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 const CHECK_INTERVAL_MS = 10000
+const SCHEDULE_TIME_ZONE_OFFSET = '+05:30'
 
 function showReminder(onReminder, detail) {
   if (onReminder) {
@@ -16,22 +15,18 @@ function showReminder(onReminder, detail) {
 // Pull scheduled posts from MongoDB and show an in-app popup one hour before.
 // Browser notifications are used too, but only when Chrome allows them.
 export function useReminders(onReminder) {
-  const reminded = useRef(new Set(
-    JSON.parse(localStorage.getItem(REMINDED_KEY) || '[]')
-  ))
+  const reminded = useRef(new Set())
 
   useEffect(() => {
     let cancelled = false
 
     const check = async () => {
-      if (localStorage.getItem(ENABLED_KEY) !== 'true') return
-
       const token = localStorage.getItem('token')
       if (!token) return
 
       let posts = []
       try {
-        const res = await fetch(`${API}/social`, { headers: { Authorization: `Bearer ${token}` } })
+        const res = await fetch(`${API_BASE}/social`, { headers: { Authorization: `Bearer ${token}` } })
         if (!res.ok) return
         posts = await res.json()
       } catch {
@@ -42,7 +37,7 @@ export function useReminders(onReminder) {
       const now = Date.now()
       posts.forEach(p => {
         if (p.posted) return
-        const postTime = new Date(`${p.date}T${p.time || '00:00:00'}`).getTime()
+        const postTime = new Date(`${p.date}T${p.time || '00:00:00'}${SCHEDULE_TIME_ZONE_OFFSET}`).getTime()
         if (isNaN(postTime)) return
 
         const remindAt = postTime - 60 * 60 * 1000
@@ -63,7 +58,6 @@ export function useReminders(onReminder) {
           }
 
           reminded.current.add(key)
-          localStorage.setItem(REMINDED_KEY, JSON.stringify([...reminded.current]))
         }
       })
     }

@@ -1,22 +1,30 @@
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { apiFetch } from '../utils/api'
 
-// Per-tool generation history, persisted in localStorage so it survives reloads.
+// Per-tool generation history, persisted by the backend in MongoDB.
 // Each entry: { id, at, kind: 'text'|'image'|'video', title, cost, url?, preview? }
 export function useGenerationHistory(toolKey, max = 12) {
-  const storageKey = `marketo_history_${toolKey}`
+  const [history, setHistory] = useState([])
+  const queryKind = toolKey === 'text' ? 'copy' : toolKey
 
-  const [history, setHistory] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(storageKey))
-      return Array.isArray(saved) ? saved : []
-    } catch {
-      return []
+  useEffect(() => {
+    let cancelled = false
+    const token = localStorage.getItem('token')
+    if (!token) {
+      setHistory([])
+      return
     }
-  })
 
-  const write = (next) => {
-    try { localStorage.setItem(storageKey, JSON.stringify(next)) } catch { /* quota / disabled */ }
-  }
+    apiFetch(`/ai/usage?kind=${encodeURIComponent(queryKind)}&limit=${max}`)
+      .then(data => {
+        if (!cancelled) setHistory(Array.isArray(data.generations) ? data.generations : [])
+      })
+      .catch(() => {
+        if (!cancelled) setHistory([])
+      })
+
+    return () => { cancelled = true }
+  }, [queryKind, max])
 
   const add = useCallback((entry) => {
     setHistory(prev => {
@@ -26,15 +34,18 @@ export function useGenerationHistory(toolKey, max = 12) {
         ...entry,
       }
       const next = [item, ...prev].slice(0, max)
-      write(next)
       return next
     })
-  }, [storageKey, max])
+  }, [max])
 
-  const clear = useCallback(() => {
+  const clear = useCallback(async () => {
     setHistory([])
-    write([])
-  }, [storageKey])
+    try {
+      await apiFetch(`/ai/usage?kind=${encodeURIComponent(queryKind)}`, { method: 'DELETE' })
+    } catch {
+      // Keep the UI responsive even if an old backend is still deployed.
+    }
+  }, [queryKind])
 
   return { history, add, clear }
 }

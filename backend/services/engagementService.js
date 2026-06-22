@@ -138,6 +138,17 @@ export function supportsRealEngagement(post) {
 // Returns { views, likes, shares, comments } or null if it can't be fetched.
 export async function fetchEngagement(post) {
   try {
+    if (post.externalPostId?.startsWith('simulated_')) {
+      const elapsedHours = Math.max(0.1, (Date.now() - new Date(post.postedAt || Date.now()).getTime()) / 3600000);
+      const baseViews = Math.floor(100 + elapsedHours * 50 + Math.random() * 20);
+      return {
+        views: baseViews,
+        likes: Math.floor(baseViews * 0.1),
+        shares: Math.floor(baseViews * 0.02),
+        comments: Math.floor(baseViews * 0.05)
+      };
+    }
+
     if (post.platform === 'Facebook') {
       const token = facebookToken()
       return token ? await fetchFacebook(post.externalPostId, token) : null

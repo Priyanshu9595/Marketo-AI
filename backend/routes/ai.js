@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { generateCopyHandler, generateImageHandler, generateVideoHandler, getUsageHandler } from '../controllers/aiController.js'
+import { generateCopyHandler, generateImageHandler, generateVideoHandler, getUsageHandler, clearUsageHandler } from '../controllers/aiController.js'
 import { aiLimiter } from '../middleware/rateLimit.js'
 import { requireAuth } from '../middleware/auth.js'
 
@@ -18,5 +18,6 @@ router.post('/video', aiLimiter, generateVideoHandler)
 
 // GET /api/ai/usage — generation history + total generation spend
 router.get('/usage', getUsageHandler)
+router.delete('/usage', clearUsageHandler)
 
 export default router

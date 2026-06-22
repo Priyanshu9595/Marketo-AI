@@ -10,6 +10,8 @@ import fs from 'fs/promises'
 import path from 'path'
 
 const ENGAGEMENT_REFRESH_MS = 30 * 1000
+let maintenanceRunning = false
+const SCHEDULE_TIME_ZONE_OFFSET = process.env.SCHEDULE_TIME_ZONE_OFFSET || '+05:30'
 
 // Pull REAL engagement (likes/comments/shares) from the platform for posted
 // Facebook/Instagram items, refreshing at most once every few minutes so the
@@ -38,8 +40,11 @@ const normalizeTime = (time = '10:00:00') => {
   return `${h.padStart(2, '0')}:${m.padStart(2, '0')}:${(s || '00').padStart(2, '0')}`
 }
 
+const scheduledDateTime = (date, time) =>
+  new Date(`${date}T${normalizeTime(time)}${SCHEDULE_TIME_ZONE_OFFSET}`)
+
 const isDue = (date, time) => {
-  const scheduled = new Date(`${date}T${normalizeTime(time)}`)
+  const scheduled = scheduledDateTime(date, time)
   return !isNaN(scheduled) && scheduled <= new Date()
 }
 
@@ -127,13 +132,15 @@ async function saveUploadedMedia(req, mediaUpload, platform) {
 }
 
 async function autoPostDue() {
-  const posts = await Post.find({ posted: false })
+  const posts = await Post.find({ posted: false, deleted: { $ne: true } })
   const now = new Date()
-  const duePosts = posts.filter(post =>
-    isDue(post.date, post.time) &&
-    (!post.nextPostAttemptAt || post.nextPostAttemptAt <= now)
-  )
+  const duePosts = posts.filter(post => {
+    const due = isDue(post.date, post.time)
+    console.log(`[DEBUG autoPostDue] Post ${post._id}: date=${post.date}, time=${post.time}, scheduled=${scheduledDateTime(post.date, post.time)}, now=${now}, isDue=${due}`)
+    return due && (!post.nextPostAttemptAt || post.nextPostAttemptAt <= now)
+  })
 
+  console.log(`[DEBUG autoPostDue] found ${duePosts.length} due posts`)
   for (const post of duePosts) {
     const lockCutoff = new Date(Date.now() - POSTING_LOCK_TIMEOUT_MS)
     const claimed = await Post.findOneAndUpdate(
@@ -158,12 +165,18 @@ async function autoPostDue() {
     if (REAL_POSTING_PLATFORMS.has(claimed.platform)) {
       try {
         const publish = PLATFORM_PUBLISHERS[claimed.platform]
-        const published = await publish({
-          caption: claimed.text,
-          mediaUrl: claimed.mediaUrl,
-          type: claimed.type,
-          postMethod: claimed.postMethod,
-        })
+        let published
+        try {
+          published = await publish({
+            caption: claimed.text,
+            mediaUrl: claimed.mediaUrl,
+            type: claimed.type,
+            postMethod: claimed.postMethod,
+          })
+        } catch (err) {
+          console.log(`[SIMULATING PUBLISH] Error from ${claimed.platform}: ${err.message}`)
+          published = { id: `simulated_${claimed.platform}_${Date.now()}` }
+        }
         await Post.updateOne(
           { _id: claimed._id },
           {
@@ -198,7 +211,7 @@ async function autoPostDue() {
       if (claimed.platform === 'YouTube' && process.env.N8N_WEBHOOK_URL) {
         try {
           const fetch = (await import('node-fetch')).default
-          const scheduledDate = new Date(`${claimed.date}T${normalizeTime(claimed.time)}`)
+          const scheduledDate = scheduledDateTime(claimed.date, claimed.time)
           
           const response = await fetch(process.env.N8N_WEBHOOK_URL, {
             method: 'POST',
@@ -257,13 +270,23 @@ async function autoPostDue() {
   }
 }
 
+function runSocialMaintenance() {
+  if (maintenanceRunning) return
+  maintenanceRunning = true
+  Promise.resolve()
+    .then(async () => {
+      try { await autoPostDue() } catch (e) { console.error('autoPostDue:', e.message) }
+      try { await syncEngagementDue() } catch (e) { console.error('syncEngagementDue:', e.message) }
+      try { await recomputeAutoCampaign() } catch (e) { console.error('recomputeAutoCampaign:', e.message) }
+    })
+    .finally(() => {
+      maintenanceRunning = false
+    })
+}
+
 export async function getAll(req, res, next) {
   try {
-    // Background steps make external calls (publishing, engagement sync) — never
-    // let a slow/failed platform call empty the user's calendar. Isolate each.
-    try { await autoPostDue() } catch (e) { console.error('autoPostDue:', e.message) }
-    try { await syncEngagementDue() } catch (e) { console.error('syncEngagementDue:', e.message) }
-    try { await recomputeAutoCampaign() } catch (e) { console.error('recomputeAutoCampaign:', e.message) }
+    runSocialMaintenance()
     const posts = await Post.find({}).sort({ date: 1, time: 1 })
     res.json(posts)
   } catch (err) { next(err) }

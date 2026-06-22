@@ -18,8 +18,8 @@ const THEMES = [
 ]
 
 export default function Settings() {
-  const [fontScale, setFontScale] = useState(localStorage.getItem('font_scale') || '1')
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark')
+  const [fontScale, setFontScale] = useState('1')
+  const [theme, setTheme] = useState('light')
   const [client, setClient] = useState({ name: '', email: '', password: '' })
   const [clientMsg, setClientMsg] = useState('')
   const [clientErr, setClientErr] = useState('')
@@ -50,13 +50,11 @@ export default function Settings() {
 
   const applyFontScale = (scale) => {
     setFontScale(scale)
-    localStorage.setItem('font_scale', scale)
     document.documentElement.style.zoom = scale
   }
 
   const applyTheme = (value) => {
     setTheme(value)
-    localStorage.setItem('theme', value)
     document.documentElement.setAttribute('data-theme', value)
   }
 

@@ -7,6 +7,7 @@ const generationSchema = new mongoose.Schema(
     user:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     kind:  { type: String, enum: ['copy', 'image', 'video'], required: true },
     title: { type: String, default: '' },
+    preview: { type: String, default: '' },
     cost:  { type: Number, default: 0 },
     url:   { type: String, default: '' },
   },

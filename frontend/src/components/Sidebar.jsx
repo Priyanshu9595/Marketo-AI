@@ -13,12 +13,11 @@ const icons = {
 
 export default function Sidebar({ active, onNavigate, open = false, onClose }) {
   const [hovered, setHovered] = useState(null)
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark')
+  const [theme, setTheme] = useState('light')
 
   // Apply theme to the document root and persist it
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
-    localStorage.setItem('theme', theme)
   }, [theme])
 
   const toggleTheme = () => setTheme(t => (t === 'dark' ? 'light' : 'dark'))

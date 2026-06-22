@@ -10,6 +10,7 @@ import { COPY_TYPES, TONE_OPTIONS } from '../utils/constants'
 import { streamText, AI_COSTS } from '../utils/helpers'
 import { useGenerationHistory } from '../hooks/useGenerationHistory'
 import { useAuthContext } from '../context/AuthContext'
+import { apiFetch } from '../utils/api'
 
 const ACCENT = '#2458FF'
 
@@ -29,20 +30,14 @@ export default function CopyGenerator() {
     setLoading(true)
     setOutput('')
     try {
-      const token = localStorage.getItem('token')
-      const res = await fetch('/api/ai/copy', {
+      const data = await apiFetch('/ai/copy', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
+        body: {
           ...form,
           type: form.type === 'Write by yourself' ? (form.customType || 'custom marketing copy') : form.type,
           tone: form.tone === 'Write by yourself' ? (form.customTone || 'custom brand tone') : form.tone,
-        }),
+        },
       })
-      const data = await res.json()
       const finalText = data.content || data.error || 'No content returned.'
       await streamText(finalText, setOutput)
       if (data.content) {
@@ -64,7 +59,7 @@ export default function CopyGenerator() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div className="copy-page" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <PageHero icon="AI" title="AI copy generator" subtitle="Generate bold marketing content with sharper brand voice" accent={ACCENT} />
 
       <div className="copy-studio-strip">

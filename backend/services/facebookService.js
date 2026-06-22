@@ -83,6 +83,7 @@ async function graphPost(path, params) {
   const res = await fetch(`${GRAPH_BASE_URL}/${path}`, {
     method: 'POST',
     body,
+    signal: AbortSignal.timeout(8000),
   })
   const data = await res.json().catch(() => ({}))
 
@@ -97,7 +98,9 @@ async function graphPost(path, params) {
 
 async function graphGet(path, params) {
   const qs = new URLSearchParams(params)
-  const res = await fetch(`${GRAPH_BASE_URL}/${path}?${qs}`)
+  const res = await fetch(`${GRAPH_BASE_URL}/${path}?${qs}`, {
+    signal: AbortSignal.timeout(8000),
+  })
   const data = await res.json().catch(() => ({}))
 
   if (!res.ok) {

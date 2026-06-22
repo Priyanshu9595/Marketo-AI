@@ -19,6 +19,7 @@ export function useAuth() {
   const logout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
+    localStorage.removeItem('marketo_active_page')
     setUser(null)
   }
 
