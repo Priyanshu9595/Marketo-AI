@@ -108,27 +108,47 @@ async function saveUploadedMedia(req, mediaUpload, platform) {
     throw err
   }
 
-  // Permanent public hosting (Cloudinary if configured, else no-setup catbox.moe).
-  // Works from localhost with no dev tunnel, and the URL stays valid — so
-  // Facebook/Instagram can always fetch the media.
-  try {
-    return await uploadBase64({
-      dataBase64: mediaUpload.data,
-      mimeType,
-      filename: mediaUpload.name || `social-${Date.now()}.${extension}`,
-    })
-  } catch {
-    // Network/host failure → fall back to serving the file from this backend
-    // (needs a public BACKEND_PUBLIC_URL, e.g. a dev tunnel).
-    if (REAL_POSTING_PLATFORMS.has(platform)) assertPublicUploadUrl(platform)
-
-    const dir = path.resolve(process.cwd(), 'generated', 'social')
-    await fs.mkdir(dir, { recursive: true })
-
-    const filename = `social-${Date.now()}.${extension}`
-    await fs.writeFile(path.join(dir, filename), Buffer.from(mediaUpload.data, 'base64'))
-    return `${publicBaseUrl(req)}/generated/social/${filename}`
+  const uploadParams = {
+    dataBase64: mediaUpload.data,
+    mimeType,
+    filename: mediaUpload.name || `social-${Date.now()}.${extension}`,
   }
+
+  // Try public hosting up to 2 times (catbox.moe has occasional hiccups)
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const url = await uploadBase64(uploadParams)
+      if (url && url.startsWith('http')) return url
+    } catch (err) {
+      console.warn(`[mediaHost] attempt ${attempt} failed:`, err.message)
+      if (attempt < 2) await new Promise(r => setTimeout(r, 1500))
+    }
+  }
+
+  // Both attempts failed — fall back to local storage
+  // Works fine for LinkedIn/YouTube, but Facebook/Instagram need a public URL
+  const dir = path.resolve(process.cwd(), 'generated', 'social')
+  await fs.mkdir(dir, { recursive: true })
+  const filename = `social-${Date.now()}.${extension}`
+  await fs.writeFile(path.join(dir, filename), Buffer.from(mediaUpload.data, 'base64'))
+  const localUrl = `${publicBaseUrl(req)}/generated/social/${filename}`
+
+  if (REAL_POSTING_PLATFORMS.has(platform)) {
+    const publicBase = configuredPublicBaseUrl()
+    if (!publicBase || /localhost|127\.|0\.0\.0\.0/i.test(publicBase)) {
+      const err = new Error(
+        `Image saved locally but public upload failed (catbox.moe unreachable). ` +
+        `For Facebook/Instagram posting, either: ` +
+        `(1) set CLOUDINARY_CLOUD_NAME + CLOUDINARY_UPLOAD_PRESET in backend/.env, or ` +
+        `(2) set BACKEND_PUBLIC_URL to your deployed Render backend URL. ` +
+        `Then restart the backend and try again.`
+      )
+      err.status = 400
+      throw err
+    }
+  }
+
+  return localUrl
 }
 
 async function autoPostDue() {
