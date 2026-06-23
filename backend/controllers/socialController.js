@@ -185,18 +185,12 @@ async function autoPostDue() {
     if (REAL_POSTING_PLATFORMS.has(claimed.platform)) {
       try {
         const publish = PLATFORM_PUBLISHERS[claimed.platform]
-        let published
-        try {
-          published = await publish({
-            caption: claimed.text,
-            mediaUrl: claimed.mediaUrl,
-            type: claimed.type,
-            postMethod: claimed.postMethod,
-          })
-        } catch (err) {
-          console.log(`[SIMULATING PUBLISH] Error from ${claimed.platform}: ${err.message}`)
-          published = { id: `simulated_${claimed.platform}_${Date.now()}` }
-        }
+        const published = await publish({
+          caption: claimed.text,
+          mediaUrl: claimed.mediaUrl,
+          type: claimed.type,
+          postMethod: claimed.postMethod,
+        })
         await Post.updateOne(
           { _id: claimed._id },
           {
