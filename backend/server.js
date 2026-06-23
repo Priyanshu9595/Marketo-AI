@@ -27,7 +27,7 @@ app.use(generalLimiter)
 
 // Static folders
 app.use('/generated', express.static(path.resolve(process.cwd(), 'generated')))
-app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')))
+app.use('/uploads',   express.static(path.resolve(process.cwd(), 'uploads')))
 
 // ── Routes ────────────────────────────────────────────
 app.use('/api/auth',      authRoutes)
@@ -50,7 +50,19 @@ app.use((req, res) => {
 // ── Error handler ─────────────────────────────────────
 app.use(errorHandler)
 
-app.listen(PORT, () => {
+// ── Start server ──────────────────────────────────────
+const server = app.listen(PORT, () => {
   console.log(`\n🚀 Marketo AI backend running on http://localhost:${PORT}`)
   console.log(`   Health: http://localhost:${PORT}/api/health\n`)
+})
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n❌ Port ${PORT} is already in use.`)
+    console.error(`   PowerShell mein yeh run karo: Stop-Process -Name node -Force`)
+    console.error(`   Phir dobara: npm run dev\n`)
+    process.exit(1)
+  } else {
+    throw err
+  }
 })
