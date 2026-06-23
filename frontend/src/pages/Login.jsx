@@ -26,10 +26,6 @@ export default function Login() {
       setError('Please enter your name.')
       return
     }
-    if (isSignup && !form.email.toLowerCase().endsWith('@nxtwave.co.in')) {
-      setError('Only @nxtwave.co.in email addresses are allowed.')
-      return
-    }
     if (form.password.length < 6) {
       setError('Password must be at least 6 characters.')
       return
@@ -48,13 +44,7 @@ export default function Login() {
         closeLogin()
       }
     } catch (err) {
-      // No working auth backend (server down) → fall back to local demo mode.
-      console.warn('Auth backend unavailable, using demo mode:', err.message)
-      login(
-        { email: form.email, user_metadata: { name: form.name || form.email.split('@')[0] } },
-        'demo-token'
-      )
-      closeLogin()
+      setError(err.message || 'Something went wrong. Please try again.')
     }
   }
 

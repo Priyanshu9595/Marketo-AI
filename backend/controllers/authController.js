@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
 import User from '../models/User.js'
 
-const ALLOWED_DOMAIN = '@nxtwave.co.in'
+const ALLOWED_DOMAIN = process.env.ALLOWED_EMAIL_DOMAIN || '' // empty = allow all emails
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' })
@@ -13,7 +13,7 @@ export async function signup(req, res, next) {
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required' })
     }
-    if (!email.toLowerCase().endsWith(ALLOWED_DOMAIN)) {
+    if (ALLOWED_DOMAIN && !email.toLowerCase().endsWith(ALLOWED_DOMAIN)) {
       return res.status(400).json({ error: `Only ${ALLOWED_DOMAIN} email addresses are allowed` })
     }
     if (password.length < 6) {
