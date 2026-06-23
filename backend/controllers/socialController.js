@@ -114,7 +114,7 @@ async function saveUploadedMedia(req, mediaUpload, platform) {
     filename: mediaUpload.name || `social-${Date.now()}.${extension}`,
   }
 
-  // Try public hosting up to 2 times (catbox.moe has occasional hiccups)
+  // Try public hosting up to 2 times (tmpfiles.org has occasional hiccups)
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
       const url = await uploadBase64(uploadParams)
@@ -137,7 +137,7 @@ async function saveUploadedMedia(req, mediaUpload, platform) {
     const publicBase = configuredPublicBaseUrl()
     if (!publicBase || /localhost|127\.|0\.0\.0\.0/i.test(publicBase)) {
       const err = new Error(
-        `Image saved locally but public upload failed (catbox.moe unreachable). ` +
+        `Image saved locally but public upload failed (tmpfiles.org unreachable). ` +
         `For Facebook/Instagram posting, either: ` +
         `(1) set CLOUDINARY_CLOUD_NAME + CLOUDINARY_UPLOAD_PRESET in backend/.env, or ` +
         `(2) set BACKEND_PUBLIC_URL to your deployed Render backend URL. ` +

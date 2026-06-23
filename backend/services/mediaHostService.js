@@ -38,16 +38,18 @@ async function uploadToCloudinary(buffer, mimeType, filename) {
   return json.secure_url
 }
 
-async function uploadToCatbox(buffer, mimeType, filename) {
+async function uploadToTmpfiles(buffer, mimeType, filename) {
   const form = new FormData()
-  form.append('reqtype', 'fileupload')
-  form.append('fileToUpload', new Blob([buffer], { type: mimeType || 'application/octet-stream' }), filename || 'upload')
-  const res = await fetch('https://catbox.moe/user/api.php', { method: 'POST', body: form })
-  const text = (await res.text()).trim()
-  if (!res.ok || !/^https?:\/\//i.test(text)) {
-    throw new Error(`Public upload failed: ${text || res.status}`)
+  form.append('file', new Blob([buffer], { type: mimeType || 'application/octet-stream' }), filename || 'upload')
+  const res = await fetch('https://tmpfiles.org/api/v1/upload', { method: 'POST', body: form })
+  const json = await res.json().catch(() => ({}))
+  
+  if (!res.ok || json.status !== 'success' || !json.data?.url) {
+    throw new Error(`Public upload failed: ${json.message || res.status}`)
   }
-  return text
+  
+  // Convert viewing URL to direct download URL (tmpfiles.org/xxxx -> tmpfiles.org/dl/xxxx)
+  return json.data.url.replace('tmpfiles.org/', 'tmpfiles.org/dl/')
 }
 
 // Upload a buffer to permanent public hosting. Prefers Cloudinary (if set up),
@@ -57,7 +59,7 @@ export async function uploadBuffer(buffer, { mimeType = '', filename = '' } = {}
     try { return await uploadToCloudinary(buffer, mimeType, filename) }
     catch { /* fall through to the anonymous host */ }
   }
-  return uploadToCatbox(buffer, mimeType, filename)
+  return uploadToTmpfiles(buffer, mimeType, filename)
 }
 
 export async function uploadBase64({ dataBase64, mimeType = '', filename = '' }) {
