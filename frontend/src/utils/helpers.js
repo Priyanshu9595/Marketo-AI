@@ -3,7 +3,7 @@ export const ENGAGEMENT_VALUES = { views: 0.5, likes: 2, shares: 5, comments: 3 
 
 // Cost charged when a post of this content type is posted — mirrors backend.
 export const POST_TYPE_COST = { 'Text message': 0.26, 'Image': 3.68, 'Video': 75.46 }
-export const postSpend = (p = {}) => POST_TYPE_COST[p.type] || 0
+export const postSpend = (p = {}) => Math.round((POST_TYPE_COST[p.type] || 0) * 100) / 100
 
 // Paid-API cost per AI generation (INR) — mirrors backend config/aiCosts.js.
 export const AI_COSTS = { copy: 0.26, image: 3.68, video: 75.46 }
@@ -34,9 +34,11 @@ export const engagementRevenue = (p = {}) => {
 }
 
 export const formatINR = (amount) => {
-  if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`
-  if (amount >= 1000)   return `₹${(amount / 1000).toFixed(1)}k`
-  return `₹${amount}`
+  const n = Math.round(amount * 100) / 100
+  if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`
+  if (n >= 1000)   return `₹${(n / 1000).toFixed(1)}k`
+  if (n % 1 !== 0) return `₹${n.toFixed(2)}`
+  return `₹${n}`
 }
 
 export const calcROAS = (revenue, spend) => {
